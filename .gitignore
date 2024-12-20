@@ -1,0 +1,4 @@
+.idea
+.DS_Store
+nginx/conf.d
+.vscode
