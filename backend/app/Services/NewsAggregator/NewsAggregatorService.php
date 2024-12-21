@@ -29,7 +29,6 @@ class NewsAggregatorService
         }
     }
 
-
     public function process()
     {
         $this->provider->crawl(function () {
