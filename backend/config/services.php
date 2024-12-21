@@ -37,8 +37,8 @@ return [
         'api_key' => env('NEWS_API_ORG_API_KEY'),
     ],
 
-    DataSources::THE_GUARDIAN_API_COM->value => [
-        'api_key' => env('THE_GUARDIAN_API_COM_API_KEY'),
+    DataSources::THE_GUARDIAN_COM->value => [
+        'api_key' => env('THE_GUARDIAN_COM_API_KEY'),
     ],
 
     DataSources::THE_NEWS_API_COM->value => [
