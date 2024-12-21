@@ -29,6 +29,19 @@ services:
         extra_hosts:
             - host.docker.internal:host-gateway
 
+    supervisor:
+        build:
+            context: supervisor
+            dockerfile: Dockerfile
+        container_name: supervisor
+        restart: unless-stopped
+        volumes:
+            - ./:/var/www
+        networks:
+            - app-network
+        depends_on:
+            - backend
+
     #Nginx Service
     nginx:
         build:
