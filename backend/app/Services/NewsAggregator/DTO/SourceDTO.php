@@ -5,15 +5,15 @@ namespace App\Services\NewsAggregator\DTO;
 class SourceDTO
 {
     public function __construct(
-        private string $slug,
-        private string $name,
-        private string $description,
-        private string $url,
-        private string $category,
+        private ?string $slug,
+        private ?string $name,
+        private ?string $description,
+        private ?string $url,
+        private ?string $category,
     ) {
     }
 
-    static function fromArray(array $data): SourceDTO
+    static function fromNewsOrgData(array $data): SourceDTO
     {
         return new SourceDTO(
             slug: $data['id'] ?? '',
@@ -24,7 +24,17 @@ class SourceDTO
         );
     }
 
-    public function slug(): string
+    public function toModel(): array
+    {
+        return [
+            'slug' => $this->slug,
+            'name' => $this->name,
+            'description' => $this->description,
+            'url' => $this->url,
+        ];
+    }
+
+    public function slug(): ?string
     {
         return $this->slug;
     }
