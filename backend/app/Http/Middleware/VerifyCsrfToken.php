@@ -12,6 +12,9 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // exclude from localhost due to bug with request-docs package
+        // request-docs package bundles the api calls with origin and referer
+        // which seem to trigger CSRF token mismatch
+        'http://localhost/*'
     ];
 }
