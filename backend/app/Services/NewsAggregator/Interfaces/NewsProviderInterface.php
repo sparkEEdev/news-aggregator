@@ -2,15 +2,14 @@
 
 namespace App\Services\NewsAggregator\Interfaces;
 
-use App\Services\NewsAggregator\DTO\SourceDTO;
-use App\Services\NewsAggregator\DTO\ArticleDTO;
+use App\Enums\DataSources;
+
 
 interface NewsProviderInterface
 {
     /**
-     * @param callable(SourceDTO[], ArticleDTO[]): void $callback
+     * @param callable(): void $callback
      * @return void
      */
     public function crawl(callable $callback): void;
-
 }

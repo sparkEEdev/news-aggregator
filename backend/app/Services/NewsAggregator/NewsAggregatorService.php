@@ -2,46 +2,38 @@
 
 namespace App\Services\NewsAggregator;
 
-use Carbon\Carbon;
-use App\Services\NewsAggregator\DTO\SourceDTO;
-use App\Services\NewsAggregator\DTO\ArticleDTO;
-use App\Services\NewsAggregator\Exceptions\InvalidValueException;
+use App\Enums\DataSources;
+use App\Services\NewsAggregator\Providers\NewsApiOrgProvider;
+use App\Services\NewsAggregator\Providers\TheNewsApiComProvider;
 use App\Services\NewsAggregator\Interfaces\NewsProviderInterface;
-use Exception;
+use App\Services\NewsAggregator\Providers\TheGuardianComProvider;
 
 class NewsAggregatorService
 {
     private NewsProviderInterface $provider;
 
-    public function __construct(NewsProviderInterface $provider)
+    public function __construct(DataSources $source)
     {
-        $this->provider = $provider;
+        switch ($source) {
+            case DataSources::NEWS_API_ORG:
+                $this->provider = new NewsApiOrgProvider();
+                break;
+            case DataSources::THE_GUARDIAN_COM:
+                $this->provider = new TheGuardianComProvider();
+                break;
+            case DataSources::THE_NEWS_API_COM:
+                $this->provider = new TheNewsApiComProvider();
+                break;
+            default:
+                throw new \Exception('Unimplemented data source');
+        }
     }
 
 
     public function process()
     {
-        $this->provider->crawl(function ($sources, $articles) {
-
-            // $this->processSources($sources);
-
-            // $this->processArticles($articles);
+        $this->provider->crawl(function () {
+            // Log::info('Crawling completed');
         });
-    }
-
-    /**
-     * @param SourceDTO[] $sources
-     */
-    private function processSources($sources): void
-    {
-        throw new Exception('Not implemented');
-    }
-
-    /**
-     * @param ArticleDTO[] $articles
-     */
-    private function processArticles($articles): void
-    {
-        throw new Exception('Not implemented');
     }
 }
