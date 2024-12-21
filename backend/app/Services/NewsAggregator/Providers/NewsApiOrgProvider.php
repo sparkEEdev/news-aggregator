@@ -2,13 +2,20 @@
 
 namespace App\Services\NewsAggregator\Providers;
 
-use App\Services\NewsAggregator\DTO\ArticleDTO;
-use App\Services\NewsAggregator\DTO\SourceDTO;
+use Log;
+use Throwable;
+use App\Models\Source;
 use GuzzleHttp\Client;
-use \Psr\Http\Client\ClientInterface;
-use GuzzleHttp\Psr7\Request;
-use App\Services\NewsAggregator\Interfaces\NewsProviderInterface;
+use App\Models\Article;
+use App\Models\Category;
 use App\Enums\DataSources;
+use GuzzleHttp\Psr7\Request;
+use \Psr\Http\Client\ClientInterface;
+use App\Services\NewsAggregator\DTO\SourceDTO;
+use App\Services\NewsAggregator\DTO\ArticleDTO;
+use App\Services\NewsAggregator\Exceptions\InvalidValueException;
+use App\Services\NewsAggregator\Interfaces\NewsProviderInterface;
+
 
 class NewsApiOrgProvider implements NewsProviderInterface
 {
@@ -17,14 +24,6 @@ class NewsApiOrgProvider implements NewsProviderInterface
     private int $pageSize = 100;
 
     private string $apiKey = '';
-
-
-    private function getHeaders(): array
-    {
-        return [
-            'X-Api-Key' => $this->apiKey,
-        ];
-    }
 
     /**
      * @property ClientInterface $client
@@ -38,46 +37,89 @@ class NewsApiOrgProvider implements NewsProviderInterface
         $this->apiKey = config("services." . DataSources::NEWS_API_ORG->value . ".api_key");
     }
 
+    private function getHeaders(): array
+    {
+        return [
+            'X-Api-Key' => $this->apiKey,
+        ];
+    }
+
     public function crawl(callable $callback): void
     {
         $sources = $this->crawlSources();
-        $headlines = $this->crawlArticles($sources);
+        $articles = $this->crawlArticles($sources);
 
+        $this->processSources($sources);
 
-        $callback($sources, $headlines);
+        $this->processArticles($articles);
+
+        $callback();
     }
 
     /**
-     * @param SourceDTO[] $sources
+     * @param SourceDTO[] $sourcesQuery
      * @return ArticleDTO[]
      */
-    private function crawlArticles(array $sourceDTOs): array
+    private function crawlArticles(array $sources): array
     {
-        $headlines = [];
+        $page = 1;
 
-        $limitOfSources = 5;
+        $headlines = [];
 
         $limitedSources = array_map(function (SourceDTO $source) {
             return $source->slug();
-        }, array_slice($sourceDTOs, 0, $limitOfSources));
+        }, $sources);
 
-        $sources = implode(',', $limitedSources);
+        $sourcesQuery = implode(',', $limitedSources);
 
-        $response = $this->client->sendRequest(
-            new Request(
-                method: 'GET',
-                uri: "$this->baseUrl/top-headlines?sources=$sources",
-                headers: $this->getHeaders(),
-            ),
-        );
+        while (true) {
+            $articles = $this->getArticles($sourcesQuery, $page);
 
-        $data = json_decode($response->getBody()->getContents(), true);
+            if (empty($articles)) {
+                break;
+            }
 
-        foreach ($data['articles'] as $article) {
-            $headlines[] = ArticleDTO::fromArray($article);
+            $headlines = array_merge($headlines, $articles);
+
+            $page++;
         }
 
         return $headlines;
+    }
+
+    /**
+     * @return ArticleDTO[]
+     */
+    private function getArticles(string $sourcesQuery, int $page): array
+    {
+        try {
+            $response = $this->client->sendRequest(
+                new Request(
+                    method: 'GET',
+                    uri: "$this->baseUrl/top-headlines?sources=$sourcesQuery&pageSize=$this->pageSize&page=$page",
+                    headers: $this->getHeaders(),
+                ),
+            );
+
+            $data = json_decode($response->getBody()->getContents(), true);
+
+            // Dev api keys are only allowed first 100 results
+            if ($data['status'] !== 'ok') {
+                return [];
+            }
+
+            $articles = [];
+
+            foreach ($data['articles'] as $article) {
+                $articles[] = ArticleDTO::fromNewsOrgData($article);
+            }
+
+            return $articles;
+
+        } catch (Throwable $e) {
+            Log::error($e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -98,33 +140,66 @@ class NewsApiOrgProvider implements NewsProviderInterface
         $sources = [];
 
         foreach ($data['sources'] as $source) {
-            $sources[] = SourceDTO::fromArray($source);
+            $sources[] = SourceDTO::fromNewsOrgData($source);
         }
 
         return $sources;
     }
 
-    public function crawlFoods(callable $callback): void
+    /**
+     * @param SourceDTO[] $sources
+     */
+    private function processSources($sources): void
     {
-        // foreach ($this->foodGroupUrls as $groupUrl) {
-        //     $crawler = $this->client->request('GET', $this->baseUrl . $groupUrl);
+        foreach ($sources as $sourceDTO) {
 
-        //     $groupName = $crawler->filter('.title')->text();
+            if (!($sourceDTO instanceof SourceDTO)) {
+                throw new InvalidValueException('SourceDTO expected');
+            }
 
-        //     $crawler->filter('.food_links > a')->each(function ($node) use ($groupName, $callback) {
+            $source = Source::where('slug', $sourceDTO->slug())->first();
 
-        //         $this->foodUrls[] = $node->attr('href');
-        //         $name = $node->text();
+            if (!$source) {
+                $source = Source::create($sourceDTO->toModel());
+            }
 
-        //         $callback(new FoodDTO($name, '', $groupName));
-        //     });
+            $category = Category::where('slug', $sourceDTO->category())->first();
 
-        //     sleep(3);
-        // }
+            if (!$category) {
+                $category = Category::create([
+                    'slug' => $sourceDTO->category(),
+                    'name' => $sourceDTO->category(),
+                ]);
+            }
+
+            $source->category()->sync($category);
+        }
     }
 
-    public function crawlFoodNutrients(callable $callback): void
+    /**
+     * @param ArticleDTO[] $articles
+     */
+    private function processArticles($articles): void
     {
-        //
+        foreach ($articles as $articleDTO) {
+            if (!($articleDTO instanceof ArticleDTO)) {
+                throw new InvalidValueException('ArticleDTO expected');
+            }
+
+            $sourceDTO = $articleDTO->source();
+
+            $article = Article::where('slug', $articleDTO->slug())->first();
+
+            if (!$article) {
+                $article = Article::create($articleDTO->toModel());
+            }
+
+            $source = Source::with('category')->where('slug', $sourceDTO->slug())->first();
+
+            if ($source) {
+                $article->source()->sync($source);
+                $article->category()->sync($source->category);
+            }
+        }
     }
 }
