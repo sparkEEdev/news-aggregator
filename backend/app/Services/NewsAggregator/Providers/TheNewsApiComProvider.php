@@ -124,8 +124,8 @@ class TheNewsApiComProvider implements NewsProviderInterface
             $randomSource = $sources[array_rand($sources->toArray())];
             $randomCategory = $categories[array_rand($categories->toArray())];
 
-            $article->source()->sync($randomSource);
-            $article->category()->sync($randomCategory);
+            $article->sources()->sync($randomSource);
+            $article->categories()->sync($randomCategory);
         }
     }
 }

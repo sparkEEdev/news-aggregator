@@ -23,12 +23,12 @@ class Article extends Model
         'published_at' => 'datetime',
     ];
 
-    public function source()
+    public function sources()
     {
-        return $this->belongsToMany(Category::class, 'source_article', 'article_id', 'source_id');
+        return $this->belongsToMany(Source::class, 'source_article', 'article_id', 'source_id');
     }
 
-    public function category()
+    public function categories()
     {
         return $this->belongsToMany(Category::class, 'article_category', 'article_id', 'category_id');
     }

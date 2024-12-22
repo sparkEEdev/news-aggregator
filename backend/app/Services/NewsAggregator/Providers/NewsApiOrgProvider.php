@@ -2,7 +2,6 @@
 
 namespace App\Services\NewsAggregator\Providers;
 
-use Log;
 use Throwable;
 use App\Models\Source;
 use GuzzleHttp\Client;
@@ -10,6 +9,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Enums\DataSources;
 use GuzzleHttp\Psr7\Request;
+use Illuminate\Support\Facades\Log;
 use \Psr\Http\Client\ClientInterface;
 use App\Services\NewsAggregator\DTO\SourceDTO;
 use App\Services\NewsAggregator\DTO\ArticleDTO;
@@ -172,7 +172,7 @@ class NewsApiOrgProvider implements NewsProviderInterface
                 ]);
             }
 
-            $source->category()->sync($category);
+            $source->categories()->sync($category);
         }
     }
 
@@ -194,11 +194,11 @@ class NewsApiOrgProvider implements NewsProviderInterface
                 $article = Article::create($articleDTO->toModel());
             }
 
-            $source = Source::with('category')->where('slug', $sourceDTO->slug())->first();
+            $source = Source::with('categories')->where('slug', $sourceDTO->slug())->first();
 
             if ($source) {
-                $article->source()->sync($source);
-                $article->category()->sync($source->category);
+                $article->sources()->sync($source);
+                $article->categories()->sync($source->category);
             }
         }
     }
