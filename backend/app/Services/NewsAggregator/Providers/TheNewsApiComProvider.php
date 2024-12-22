@@ -2,7 +2,6 @@
 
 namespace App\Services\NewsAggregator\Providers;
 
-use Log;
 use Throwable;
 use App\Models\Source;
 use GuzzleHttp\Client;
@@ -10,6 +9,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Enums\DataSources;
 use GuzzleHttp\Psr7\Request;
+use Illuminate\Support\Facades\Log;
 use \Psr\Http\Client\ClientInterface;
 use App\Services\NewsAggregator\DTO\ArticleDTO;
 use App\Services\NewsAggregator\Exceptions\InvalidValueException;

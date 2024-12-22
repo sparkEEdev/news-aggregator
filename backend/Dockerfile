@@ -18,11 +18,11 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl
 
 RUN pecl install -o -f xdebug-3.4.0 \
-    && docker-php-ext-enable xdebug
-#     && rm -rf /tmp/pear
+    && docker-php-ext-enable xdebug \
+    && rm -rf /tmp/pear
 
 # Set working directory
-WORKDIR /var/www/server
+WORKDIR /var/www/backend
 
 # Copy the application code
 COPY . .
