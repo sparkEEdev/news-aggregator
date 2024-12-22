@@ -1,8 +1,9 @@
 <?php
 
-use App\Core\v1\Category\Controllers\CategoryController;
-use App\Core\v1\Source\Controllers\SourceController;
 use Illuminate\Support\Facades\Route;
+use App\Core\v1\Source\Controllers\SourceController;
+use App\Core\v1\Article\Controllers\ArticleController;
+use App\Core\v1\Category\Controllers\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,4 +25,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::resource('categories', CategoryController::class)->only(['index']);
     Route::resource('sources', SourceController::class)->only(['index']);
+    Route::resource('articles', ArticleController::class)->only(['index', 'show']);
 });
