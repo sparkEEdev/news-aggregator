@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\DataSources;
+
 return [
 
     /*
@@ -29,6 +31,18 @@ return [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    DataSources::NEWS_API_ORG->value => [
+        'api_key' => env('NEWS_API_ORG_API_KEY'),
+    ],
+
+    DataSources::THE_GUARDIAN_COM->value => [
+        'api_key' => env('THE_GUARDIAN_COM_API_KEY'),
+    ],
+
+    DataSources::THE_NEWS_API_COM->value => [
+        'api_key' => env('THE_NEWS_API_COM_API_KEY'),
     ],
 
 ];

@@ -18,20 +18,27 @@ class UserSeeder extends Seeder
         $adminRole = Role::where('name', Roles::ADMIN)->first();
         $userRole = Role::where('name', Roles::USER)->first();
 
-        $adminUser = User::factory()->create([
+        $adminUser = User::updateOrCreate([
+            'email' => 'foo@bar.com',
+        ], [
             'name' => 'Admin',
             'email' => 'foo@bar.com',
             'password' => '123123123',
         ]);
 
-        $adminUser->roles()->attach($adminRole);
+        $adminUser->roles()->sync($adminRole);
 
-        $user = User::factory()->create([
-            'name' => 'Regular User',
-            'email' => 'bar@foo.com',
-            'password' => '123123123',
-        ]);
+        $user = User::updateOrCreate(
+            [
+                'email' => 'bar@foo.com',
+            ],
+            [
+                'name' => 'Regular User',
+                'email' => 'bar@foo.com',
+                'password' => '123123123',
+            ]
+        );
 
-        $user->roles()->attach($userRole);
+        $user->roles()->sync($userRole);
     }
 }
